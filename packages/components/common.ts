@@ -1,8 +1,8 @@
-import { PDF_Element_Style,PDF_Element_Props } from "../types"
+import { PDF_Element_Style, PDF_Element_Props } from "../types"
 
 
 
-let defaultStyle:Required<PDF_Element_Style> = {
+let defaultStyle: Required<PDF_Element_Style> = {
   left: 0,
   top: 0,
   right: 0,
@@ -10,8 +10,8 @@ let defaultStyle:Required<PDF_Element_Style> = {
   width: 0,
   height: 0,
   fill: '#fff',
-  fontSize:14,
-  radius:0
+  fontSize: 14,
+  radius: 0
 }
 
 export default class BaseCommon {
@@ -24,22 +24,46 @@ export default class BaseCommon {
   radius: number  //圆
   props: PDF_Element_Props
   ratio: number
-  constructor(style: PDF_Element_Style,props:PDF_Element_Props) {
-    this.style = Object.assign({},defaultStyle, style)
-    this.props=Object.assign({},props)
-    this.startX = this.style.left ||0
-    this.startY = this.style.top ||0
+  constructor(style: PDF_Element_Style, props: PDF_Element_Props) {
+    this.init(style,props)
+  }
+
+  init(style: PDF_Element_Style, props: PDF_Element_Props){
+    this.style = Object.assign({}, defaultStyle, style)
+    this.props = Object.assign({}, props)
+    this.startX = this.style.left || 0
+    this.startY = this.style.top || 0
     this.width = this.style.width || 0
     this.height = this.style.height || 0
     this.fillStyle = this.style.fill
     this.radius = this.style.radius
   }
 
+  drawBorder(){
+    
+  }
+
+  update(style: PDF_Element_Style, props: PDF_Element_Props){
+    this.init(style,props)
+  }
+  isPointRect({ offsetX, offsetY }) {
+    let x =  offsetX 
+    let y =offsetY 
+    if (
+      x >= this.startX &&
+      x <= this.width + this.startX &&
+      y >= this.startY &&
+      y <= this.height + this.startY) {
+      return true
+    }
+    return false
+  }
+
   /** 
    * @param ctx:canvas上下文
    * @param scrollTop: 距离
   */
-  arcRadius (ctx:CanvasRenderingContext2D, scrollTop:number) {
+  arcRadius(ctx: CanvasRenderingContext2D, scrollTop: number) {
     //计算出圆角的半径，取宽度和高度的一半中较小的值，确保圆角不会超出矩形的边界。
     let min = Math.min(this.width / 2, this.height / 2)
     // 定义矩形的起始点坐标（x，y）、宽度（w）和高度（h）。
@@ -49,7 +73,7 @@ export default class BaseCommon {
     let h = this.height
     // 取圆角半径，如果指定的圆角半径大于计算得到的半径（min），则使用计算得到的半径。
     let r = this.radius > min ? min : this.radius
-    
+
     //创建绘制路径
     ctx.beginPath()
     //绘制点 移动对应的x,y

@@ -1,4 +1,7 @@
 
+export enum  RenderType {
+   Text = "text"
+}
 export  type Params = {
   options:Options[]
 }
@@ -8,11 +11,16 @@ export  type Options = {
   element: PDF_Element[]
 }
 export  interface PDF_Element {
-  type: string;
+  type: RenderType;
   style?:PDF_Element_Style;
-  props?: PDF_Element_Props
+  props?: PDF_Element_Props;
+  on?:{
+    [eventName: string]: (...arg) => void;
+  }
 }
-
+export interface PDF_Render_Element extends  PDF_Element {
+   _id:number
+}
 export interface PDF_Element_Style {
   width?: number;
   height?:number;
@@ -26,7 +34,7 @@ export interface PDF_Element_Style {
 }
 
 export interface PDF_Element_Props{
-  label:string// 文本
+  label?:string// 文本
 }
 
 

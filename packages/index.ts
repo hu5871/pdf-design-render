@@ -7,11 +7,16 @@ export class VarPdf {
   options: Options[];
   canvas: Canvas[];
   config:PDF_Config
+  renders:Render[]
+  mode: 'temp'|'prod';
   constructor(options){
     this.options = options
     this.canvas=[]
+    this.renders=[]
+    
   }
   createTemplates():(HTMLCanvasElement)[]{
+    this.mode='temp'
     const {options}=this
     const canvasPages:(HTMLCanvasElement)[]=[]
     for (let i = 0; i < options.length; i++) {
@@ -25,7 +30,17 @@ export class VarPdf {
   render(){
     for (let index = 0; index < this.canvas.length; index++) {
       const cv = this.canvas[index];
-      new Render(cv,cv.width,cv.height,cv.ratio).createElements()
+      this.renders.push(new Render(cv,cv.width,cv.height,cv.ratio)) 
     }
   }
+  update(){
+    console.log(this.options)
+    for (let index = 0; index < this.canvas.length; index++) {
+      const rn = this.renders[index];
+      const cv = this.canvas[index];
+      cv._ctx.clearRect(0, 0, cv.width, cv.height);
+      rn.createElements()
+    }
+  }
+
 }

@@ -1,37 +1,64 @@
 <template>
+  <button @click="handleUpdate">update</button>
   <div class="v-pdf-template">
   </div>
-  <text style="font-size: 12px;">文本</text>
 </template>
 <script setup lang="ts">
 import { onMounted } from "vue";
-import {VarPdf} from '../packages'
+import { VarPdf } from '../packages'
+import { Options, RenderType } from '../packages/types';
+import Stats from './stats'
 
-import { Options } from '../packages/types';
-const op:Options[]= [
+var stats: any = new Stats();
+
+
+const loop = function(){
+  stats.update();
+  window.requestAnimationFrame(function(){
+  loop();
+  })
+}
+onMounted(() => {
+  stats.setMode(0);
+  stats.domElement.style.position = 'absolute';
+  stats.domElement.style.right = '0px';
+  stats.domElement.style.top = '0px';
+  document.body.appendChild(stats.domElement);
+
+  loop()
+  
+})
+
+const op: Options[] = [
   {
     pageWidth: 210 * (72 / 25.4),
     pageHeight: 297 * (72 / 25.4),
-    element:[
+    element: [
       {
-        type:"text",
-        style:{
-          top:100,
-          left:100,
-          fontSize:16,
+        type:RenderType.Text,
+        style: {
+          top: 100,
+          left: 100,
+          fontSize: 16,
+          fill: 'red',
         },
-        props:{
-          label:"文本"
+        props: {
+          label: "文本",
+        },
+        on: {
+          click(e: any, item: any) {
+            // console.log(e, item)
+          }
         }
       }
     ]
   }
 ]
-const varPdf =new VarPdf(op)
+const varPdf = new VarPdf(op)
 const pdfPages = varPdf.createTemplates()
 
 
-onMounted(()=>{
+onMounted(() => {
   for (let i = 0; i < pdfPages.length; i++) {
     const element = pdfPages[i];
     document.querySelector('.v-pdf-template')?.appendChild(element)
@@ -39,7 +66,9 @@ onMounted(()=>{
   varPdf.render()
 })
 
-</script>
-<style scoped>
 
-</style>
+function handleUpdate(){
+  
+}
+</script>
+<style scoped></style>

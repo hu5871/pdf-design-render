@@ -1,5 +1,8 @@
+import { RenderType } from '../types'
 import Text from './text'
 
-export default {
-  text:Text
+
+const ComponentMap={
+  [RenderType.Text]:Text
 }
+export default ComponentMap

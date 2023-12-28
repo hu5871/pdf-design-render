@@ -19,7 +19,7 @@ export class Canvas {
     this.height = height
     this.element=element
     this._canvas = null
-
+   
     if (!this._canvas) {
       this._canvas = document.createElement('canvas')
     }
@@ -37,5 +37,13 @@ export class Canvas {
 
   getCanvas(){
     return this._canvas
+  }
+
+  clear(canvas:Canvas){
+    canvas._ctx.clearRect(0,0,this.width*this.scale,this.height*this.scale)
+  }
+
+  noop(){
+
   }
 }
