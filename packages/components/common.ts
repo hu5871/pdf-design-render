@@ -24,11 +24,14 @@ export default class BaseCommon {
   radius: number  //圆
   props: PDF_Element_Props
   ratio: number
+  point: number[];//存放点辅助坐标
+  active: boolean
   constructor(style: PDF_Element_Style, props: PDF_Element_Props) {
-    this.init(style,props)
+    this.init(style, props,false)
+
   }
 
-  init(style: PDF_Element_Style, props: PDF_Element_Props){
+  init(style: PDF_Element_Style, props: PDF_Element_Props,active:boolean) {
     this.style = Object.assign({}, defaultStyle, style)
     this.props = Object.assign({}, props)
     this.startX = this.style.left || 0
@@ -37,18 +40,28 @@ export default class BaseCommon {
     this.height = this.style.height || 0
     this.fillStyle = this.style.fill
     this.radius = this.style.radius
+    this.active=active
   }
 
-  drawBorder(){
-    
+  update(style: PDF_Element_Style, props: PDF_Element_Props,active?:boolean) {
+    this.init(style, props,!!active)
   }
 
-  update(style: PDF_Element_Style, props: PDF_Element_Props){
-    this.init(style,props)
+  drawAux(ctx: CanvasRenderingContext2D){
+    const { style: { left = 0, top = 0 }, width = 0, height = 0 } = this
+    ctx.lineWidth = 1;
+    ctx.strokeStyle='#6299b7'
+    ctx.strokeRect(left, top, width, height)
+
   }
+
+  
+  destroy(ctx: CanvasRenderingContext2D){
+  }
+
   isPointRect({ offsetX, offsetY }) {
-    let x =  offsetX 
-    let y =offsetY 
+    let x = offsetX
+    let y = offsetY
     if (
       x >= this.startX &&
       x <= this.width + this.startX &&

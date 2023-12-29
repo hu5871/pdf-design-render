@@ -40,10 +40,29 @@ const op: Options[] = [
           top: 100,
           left: 100,
           fontSize: 16,
+          width:200,
+          height:200,
           fill: 'red',
         },
         props: {
           label: "文本",
+        },
+        on: {
+          click(e: any, item: any) {
+            // console.log(e, item)
+          }
+        }
+      },
+      {
+        type:RenderType.Text,
+        style: {
+          top: 300,
+          left: 100,
+          fontSize: 16,
+          fill: 'red',
+        },
+        props: {
+          label: "一颗红心两只手，世世代代跟党走。 --平凡的世界",
         },
         on: {
           click(e: any, item: any) {

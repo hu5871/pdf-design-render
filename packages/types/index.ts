@@ -20,6 +20,7 @@ export  interface PDF_Element {
 }
 export interface PDF_Render_Element extends  PDF_Element {
    _id:number
+   _active:boolean
 }
 export interface PDF_Element_Style {
   width?: number;

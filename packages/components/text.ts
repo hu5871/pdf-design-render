@@ -6,27 +6,22 @@ export default class Text extends BaseCommon {
   fontSize: number;
   font: string;
   textBaseline: CanvasTextBaseline;
-  active: boolean;
   constructor(style:PDF_Element_Style,props:PDF_Element_Props){
     super(style,props)
     this.text = props.label||''
     this.fontSize = this.style.fontSize
     this.font = `${this.fontSize}px Helvetica Neue,Helvetica,Arial,PingFangSC-Regular,Microsoft YaHei,SimSun,sans-serif`
     this.textBaseline = 'top'
-    // 选中编辑
-    this.active=false
   }
 
-  draw(_ctx:CanvasRenderingContext2D, scrollTop:number=0) {
-    _ctx.save()
+  draw(_ctx:CanvasRenderingContext2D) {
     _ctx.font = this.font
     _ctx.textBaseline = this.textBaseline
-    // const _scale = window.devicePixelRatio
     const textMetrics =  _ctx.measureText(this.text)
     this.width = this.width || textMetrics.width
-    this.height=textMetrics.actualBoundingBoxAscent+ textMetrics.actualBoundingBoxDescent
+    this.height=this.height||textMetrics.actualBoundingBoxAscent+ textMetrics.actualBoundingBoxDescent
    
-    let drawY = this.startY - scrollTop
+    let drawY = this.startY 
     let drawX = this.startX
     _ctx.fillStyle = this.fillStyle
     _ctx.fillText(
@@ -34,5 +29,6 @@ export default class Text extends BaseCommon {
       drawX,
       drawY
     )
+    this.active && this.drawAux(_ctx)
   }
 }

@@ -1,6 +1,9 @@
 import { Options, PDF_Element } from "../types"
 
-export class Canvas {
+
+
+
+export class Canvas  {
   width: number
   height: number
   _canvas: HTMLCanvasElement|null
