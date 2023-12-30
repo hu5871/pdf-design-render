@@ -69,6 +69,22 @@ const op: Options[] = [
             // console.log(e, item)
           }
         }
+      },
+      {
+        type:RenderType.Circle,
+        style: {
+          top: 600,
+          left: 100,
+          radius:50,
+          fill: 'red',
+        },
+        props: {
+        },
+        on: {
+          click(e: any, item: any) {
+            // console.log(e, item)
+          }
+        }
       }
     ]
   }

@@ -1,6 +1,4 @@
-import { PDF_Element_Style, PDF_Element_Props } from "../types"
-
-
+import { PDF_Element_Style, PDF_Element_Props, Point, PointRect } from "../types"
 
 let defaultStyle: Required<PDF_Element_Style> = {
   left: 0,
@@ -26,12 +24,13 @@ export default class BaseCommon {
   ratio: number
   point: number[];//存放点辅助坐标
   active: boolean
+  rects: {x:number,y:number}[][]
   constructor(style: PDF_Element_Style, props: PDF_Element_Props) {
-    this.init(style, props,false)
+    this.init(style, props, false)
 
   }
 
-  init(style: PDF_Element_Style, props: PDF_Element_Props,active:boolean) {
+  init(style: PDF_Element_Style, props: PDF_Element_Props, active: boolean) {
     this.style = Object.assign({}, defaultStyle, style)
     this.props = Object.assign({}, props)
     this.startX = this.style.left || 0
@@ -40,37 +39,109 @@ export default class BaseCommon {
     this.height = this.style.height || 0
     this.fillStyle = this.style.fill
     this.radius = this.style.radius
-    this.active=active
+    this.active = active
+    this.rects=[]
   }
 
-  update(style: PDF_Element_Style, props: PDF_Element_Props,active?:boolean) {
-    this.init(style, props,!!active)
+  update(style: PDF_Element_Style, props: PDF_Element_Props, active?: boolean) {
+    this.init(style, props, !!active)
   }
 
-  drawAux(ctx: CanvasRenderingContext2D){
-    const { style: { left = 0, top = 0 }, width = 0, height = 0 } = this
+  drawAux(ctx: CanvasRenderingContext2D,rect:PointRect, active: boolean) {
+    const {x,y, width = 0, height = 0 } =rect
     ctx.lineWidth = 1;
-    ctx.strokeStyle='#6299b7'
-    ctx.strokeRect(left, top, width, height)
-
-  }
-
-  
-  destroy(ctx: CanvasRenderingContext2D){
-  }
-
-  isPointRect({ offsetX, offsetY }) {
-    let x = offsetX
-    let y = offsetY
-    if (
-      x >= this.startX &&
-      x <= this.width + this.startX &&
-      y >= this.startY &&
-      y <= this.height + this.startY) {
-      return true
+    ctx.strokeStyle = !active ? 'rgba(0, 0, 0, 0)' : '#6299b7'
+    ctx.strokeRect(x, y, width, height)
+    //绘画可拖动缩放圆
+    if (active) {
+      // 存放各个方向圆点坐标
+      this.rects = this.getPoint(x, y, width, height)
+      // 绘制圆形
+      for (let i = 0; i <  this.rects.length; i++) {
+        const points =  this.rects[i];
+        points.forEach(({x,y}) => {
+          if(x<0 || y<0) return
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(x,y, 5, 0, Math.PI * 2);
+          ctx.fillStyle="#6299b7"
+          ctx.fill();
+          ctx.stroke();
+        });
+      }
     }
-    return false
   }
+
+  getPoint(x:number, y:number, width:number, height:number):{x:number,y:number}[][] {
+    // 顶部三个点的坐标
+    const top = [
+      {
+        x: x,
+        y: y 
+      },
+      {
+        x: (x + width / 2),
+        y: y 
+      },
+      {
+        x: x + width,
+        y: y 
+      },
+    ]
+     // 顶部三个点的坐标
+     const center = [
+      {
+        x: x ,
+        y: y + (height / 2)
+      },
+      {
+        x: -1,
+        y: -1
+      },
+      {
+        x: x + width,
+        y: y  + (height / 2)
+      },
+    ]
+     // 顶部三个点的坐标
+     const bottom = [
+      {
+        x: x,
+        y: y + height
+      },
+      {
+        x: (x + width / 2),
+        y: y + height
+      },
+      {
+        x: x + width,
+        y: y + height
+      },
+    ]
+    return [
+      top,
+      center,
+      bottom,
+    ]
+  }
+
+
+  destroy(ctx: CanvasRenderingContext2D) {
+  }
+
+  // isPointRect({ offsetX, offsetY }) {
+  //   let x = offsetX
+  //   let y = offsetY
+  //   if (
+  //     x >= this.startX &&
+  //     x <= this.width + this.startX &&
+  //     y >= this.startY &&
+  //     y <= this.height + this.startY) {
+  //     return true
+  //   }
+  //   return false
+  // }
+ 
 
   /** 
    * @param ctx:canvas上下文
