@@ -55,7 +55,10 @@ export interface Point  {
   x: number
   y: number
 }
+export type Position = "top:left" | 'top:center'|'top:right' |"center:left" | 'center:center'|'center:right'|"bottom:left" | 'bottom:center'|'bottom:right'
 export interface PointRect extends Point {
   width:number;
-  height:number
+  height:number;
+  radius?:number;
+  color?:string
 }

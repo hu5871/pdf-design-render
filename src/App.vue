@@ -53,28 +53,30 @@ const op: Options[] = [
           }
         }
       },
-      {
-        type:RenderType.Text,
-        style: {
-          top: 300,
-          left: 100,
-          fontSize: 16,
-          fill: 'red',
-        },
-        props: {
-          label: "一颗红心两只手，世世代代跟党走。 --平凡的世界",
-        },
-        on: {
-          click(e: any, item: any) {
-            // console.log(e, item)
-          }
-        }
-      },
+      // {
+      //   type:RenderType.Text,
+      //   style: {
+      //     top: 300,
+      //     left: 100,
+      //     fontSize: 16,
+      //     fill: 'red',
+      //   },
+      //   props: {
+      //     label: "一颗红心两只手，世世代代跟党走。 --平凡的世界",
+      //   },
+      //   on: {
+      //     click(e: any, item: any) {
+      //       // console.log(e, item)
+      //     }
+      //   }
+      // },
       {
         type:RenderType.Circle,
         style: {
           top: 600,
           left: 100,
+          width:100,
+          height:100,
           radius:50,
           fill: 'red',
         },
@@ -87,7 +89,65 @@ const op: Options[] = [
         }
       }
     ]
-  }
+  },
+  // {
+  //   pageWidth: 210 * (72 / 25.4),
+  //   pageHeight: 297 * (72 / 25.4),
+  //   element: [
+  //     {
+  //       type:RenderType.Text,
+  //       style: {
+  //         top: 100,
+  //         left: 100,
+  //         fontSize: 16,
+  //         width:200,
+  //         height:200,
+  //         fill: 'red',
+  //       },
+  //       props: {
+  //         label: "第二章文本",
+  //       },
+  //       on: {
+  //         click(e: any, item: any) {
+  //           // console.log(e, item)
+  //         }
+  //       }
+  //     },
+  //     {
+  //       type:RenderType.Text,
+  //       style: {
+  //         top: 300,
+  //         left: 100,
+  //         fontSize: 16,
+  //         fill: 'red',
+  //       },
+  //       props: {
+  //         label: "虽然人生在世有种种不如意，但你仍可以在幸福与不幸中做选择。 --写给新的一年",
+  //       },
+  //       on: {
+  //         click(e: any, item: any) {
+  //           // console.log(e, item)
+  //         }
+  //       }
+  //     },
+  //     {
+  //       type:RenderType.Circle,
+  //       style: {
+  //         top: 600,
+  //         left: 100,
+  //         radius:50,
+  //         fill: 'skyblue',
+  //       },
+  //       props: {
+  //       },
+  //       on: {
+  //         click(e: any, item: any) {
+  //           // console.log(e, item)
+  //         }
+  //       }
+  //     }
+  //   ]
+  // }
 ]
 const varPdf = new VarPdf(op)
 const pdfPages = varPdf.createTemplates()

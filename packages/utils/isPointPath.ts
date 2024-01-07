@@ -9,17 +9,19 @@ export default function isPointPath  (
   switch (shape) {
     case ShapeType.Rect: {
       return (
-        ins.startX <= point.x &&
-        ins.startX + ins.width >= point.x &&
-        ins.startY <= point.y &&
-        ins.startY + ins.height >= point.y
+        ins.x <= point.x &&
+        ins.x + ins.width >= point.x &&
+        ins.y <= point.y &&
+        ins.y + ins.height >= point.y
       );
     }
     case ShapeType.Circle: {
+      const {x,y,width,height,radius}=ins
+     
       return (
         Math.sqrt(
-          Math.pow(point.x - ins.startX, 2) + Math.pow(point.y - ins.startY, 2),
-        ) <= ins.radius
+          Math.pow(point.x - x, 2) + Math.pow(point.y - y, 2),
+        ) <= radius
       );
     }
     default:

@@ -1,3 +1,4 @@
+import { Position } from './../types/index';
 import { PDF_Element_Style, PDF_Element_Props, Point, PointRect } from "../types"
 
 let defaultStyle: Required<PDF_Element_Style> = {
@@ -14,8 +15,8 @@ let defaultStyle: Required<PDF_Element_Style> = {
 
 export default class BaseCommon {
   style: Required<PDF_Element_Style>
-  startX: number
-  startY: number
+  x: number
+  y: number
   width: number
   height: number
   fillStyle: string //填充的颜色
@@ -24,7 +25,8 @@ export default class BaseCommon {
   ratio: number
   point: number[];//存放点辅助坐标
   active: boolean
-  rects: {x:number,y:number}[][]
+  rects: PointRect[][]
+  rectMap:Map<PointRect,Position>
   constructor(style: PDF_Element_Style, props: PDF_Element_Props) {
     this.init(style, props, false)
 
@@ -33,14 +35,19 @@ export default class BaseCommon {
   init(style: PDF_Element_Style, props: PDF_Element_Props, active: boolean) {
     this.style = Object.assign({}, defaultStyle, style)
     this.props = Object.assign({}, props)
-    this.startX = this.style.left || 0
-    this.startY = this.style.top || 0
+    this.x = this.style.left || 0
+    this.y = this.style.top || 0
     this.width = this.style.width || 0
     this.height = this.style.height || 0
     this.fillStyle = this.style.fill
     this.radius = this.style.radius
     this.active = active
     this.rects=[]
+    this.rectMap=new Map()
+  }
+  
+  Observer(){
+
   }
 
   update(style: PDF_Element_Style, props: PDF_Element_Props, active?: boolean) {
@@ -51,97 +58,144 @@ export default class BaseCommon {
     const {x,y, width = 0, height = 0 } =rect
     ctx.lineWidth = 1;
     ctx.strokeStyle = !active ? 'rgba(0, 0, 0, 0)' : '#6299b7'
+    // ctx.strokeStyle = !active ? '#6299b7' : '#6299b7'
     ctx.strokeRect(x, y, width, height)
+    this.rects =  this.getPoint(x, y, width, height)
     //绘画可拖动缩放圆
     if (active) {
       // 存放各个方向圆点坐标
-      this.rects = this.getPoint(x, y, width, height)
       // 绘制圆形
       for (let i = 0; i <  this.rects.length; i++) {
         const points =  this.rects[i];
-        points.forEach(({x,y}) => {
+        points.forEach(({x,y,color}) => {
           if(x<0 || y<0) return
           ctx.save();
           ctx.beginPath();
           ctx.arc(x,y, 5, 0, Math.PI * 2);
-          ctx.fillStyle="#6299b7"
+          ctx.fillStyle=color || ''
           ctx.fill();
           ctx.stroke();
         });
       }
     }
+    
+  }
+  updateRects(rect:PointRect){
+    const {x,y, width = 0, height = 0 } =rect
+    this.getPoint(x,y,width,height)
   }
 
-  getPoint(x:number, y:number, width:number, height:number):{x:number,y:number}[][] {
+
+  getPoint(x:number, y:number, width:number, height:number):PointRect[][] {
+    const circleSize=10
     // 顶部三个点的坐标
-    const top = [
+    let top:PointRect[] = [
       {
         x: x,
-        y: y 
+        y: y,
+        width:circleSize,
+        height:circleSize,
+        radius:circleSize /2,
+        color:"red",
       },
       {
         x: (x + width / 2),
-        y: y 
+        y: y,
+        width:circleSize,
+        height:circleSize,
+        radius:circleSize /2,
+        color:"#282a35",
       },
       {
         x: x + width,
-        y: y 
+        y: y,
+        width:circleSize,
+        height:circleSize,
+        radius:circleSize /2,
+        color:"#d283b4",
       },
-    ]
-     // 顶部三个点的坐标
-     const center = [
+    ].sort((a,b)=>{
+      return a.x - b.x
+    }) as PointRect[]
+     // 中间三个点的坐标
+     let center:PointRect[] = [
       {
         x: x ,
-        y: y + (height / 2)
+        y: y + (height / 2),
+        width:circleSize,
+        height:circleSize,
+        radius:circleSize /2,
+        color:"#73fcfd",
       },
       {
         x: -1,
-        y: -1
+        y: -1,
+        width:0,
+        height:0,
+        radius:0,
+        color:"#6e707c",
       },
       {
         x: x + width,
-        y: y  + (height / 2)
+        y: y  + (height / 2),
+        width:circleSize,
+        height:circleSize,
+        radius:circleSize /2,
+        color:"#e2e79f",
       },
     ]
-     // 顶部三个点的坐标
-     const bottom = [
+
+     // 底部三个点的坐标
+     let bottom:PointRect[] = [
       {
         x: x,
-        y: y + height
+        y: y + height,
+        width:circleSize,
+        height:circleSize,
+        radius:circleSize /2,
+        color:"#80a89d",
       },
       {
         x: (x + width / 2),
-        y: y + height
+        y: y + height,
+        width:circleSize,
+        height:circleSize,
+        radius:circleSize /2,
+        color:"#ad7633",
       },
       {
         x: x + width,
-        y: y + height
+        y: y + height,
+        width:circleSize,
+        height:circleSize,
+        radius:circleSize /2,
+        color:"#282a35",
       },
-    ]
-    return [
-      top,
-      center,
-      bottom,
-    ]
+    ].sort((a,b)=>{
+      return a.x - b.x
+    }) as PointRect[]
+
+
+    [top,center,bottom] = top[0].y>bottom[0].y  ? [bottom,center,top] : [top,center,bottom]
+
+    const positionList:Position[][]=[["top:left","top:center","top:right"],["center:left","center:center","center:right"],["bottom:left","bottom:center","bottom:right"]]
+    top.forEach((item,i) => {
+      this.rectMap.set(item,positionList[0][i])
+    });
+    center.forEach((item,i) => {
+      this.rectMap.set(item,positionList[1][i])
+    });
+    bottom.forEach((item,i) => {
+      this.rectMap.set(item,positionList[2][i])
+    });
+// console.log(center)
+    return  [top,center,bottom]
   }
 
 
   destroy(ctx: CanvasRenderingContext2D) {
   }
 
-  // isPointRect({ offsetX, offsetY }) {
-  //   let x = offsetX
-  //   let y = offsetY
-  //   if (
-  //     x >= this.startX &&
-  //     x <= this.width + this.startX &&
-  //     y >= this.startY &&
-  //     y <= this.height + this.startY) {
-  //     return true
-  //   }
-  //   return false
-  // }
- 
 
   /** 
    * @param ctx:canvas上下文
@@ -151,8 +205,8 @@ export default class BaseCommon {
     //计算出圆角的半径，取宽度和高度的一半中较小的值，确保圆角不会超出矩形的边界。
     let min = Math.min(this.width / 2, this.height / 2)
     // 定义矩形的起始点坐标（x，y）、宽度（w）和高度（h）。
-    let x = this.startX
-    let y = this.startY - scrollTop
+    let x = this.x
+    let y = this.y - scrollTop
     let w = this.width
     let h = this.height
     // 取圆角半径，如果指定的圆角半径大于计算得到的半径（min），则使用计算得到的半径。

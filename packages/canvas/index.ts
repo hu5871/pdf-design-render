@@ -33,6 +33,8 @@ export class Canvas  {
 
     this._canvas.style.width = this.width + 'px'
     this._canvas.style.height = this.height + 'px'
+    this._canvas.style.marginBottom = 30 + 'px'
+    this._canvas.style.boxShadow=`0px 0px 20px -6px #000000`
     this.ratio= window.innerWidth / (37.5 * 10)
     this._canvas!.getContext('2d')!.scale(this.scale, this.scale)
     this._ctx = this._canvas!.getContext('2d') as CanvasRenderingContext2D

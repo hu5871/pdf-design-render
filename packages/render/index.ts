@@ -1,5 +1,5 @@
 import { Canvas } from "../canvas";
-import { PDF_Render_Element } from "../types";
+import { PDF_Render_Element, Point, PointRect, Position, ShapeType } from "../types";
 import Component from "../components";
 import Events from "../events";
 import isPointPath from "../utils/isPointPath";
@@ -16,6 +16,7 @@ export class Render extends Canvas {
   renderMap: Map<PDF_Render_Element["_id"], any>
   item: PDF_Render_Element | undefined
   index: number
+  dirRect: Position | null;
 
   constructor(canvasIns: Canvas, width: number, height: number, ratio: number) {
     super({ width, height, element: canvasIns.element })
@@ -34,6 +35,9 @@ export class Render extends Canvas {
     this.startY = 0
     this.item = undefined
     this.index = -1
+
+    // 缩放
+    this.dirRect = null
   }
   createElements() {
     this.clear(this.ins)
@@ -59,48 +63,120 @@ export class Render extends Canvas {
     switch (type) {
       case "mousedown":
         const { x, y } = this.getCanvasPoint(e)
-        const index = this.elements.findIndex(item => isPointPath(this.renderMap.get(item._id),{ x, y },this.renderMap.get(item._id).shapeType))
+        if (this.item) {
+          //获取某个方向的圆点
+          const { rects,rectMap } = this.renderMap.get(this.item!._id)
+          if (rects.length) {
+            for (const [key, value] of rectMap) {
+              // 点击命中
+              const isHit= isPointPath(key, { x, y }, ShapeType.Circle)
+              if(isHit) {
+                this.dirRect = value
+                break
+              }
+            }
+          }
+          if (this.dirRect) return
+        }
+        let index = this.elements.findIndex(item => isPointPath(this.renderMap.get(item._id), { x, y }, this.renderMap.get(item._id).shapeType))
+        console.log(index)
         this.item = index !== -1 ? this.elements[index] : undefined
         this.index = index
         const { left = 0, top = 0 } = this.item?.style || {}
-        //如果点击的是缩放圆点、圆点部分在矩形外边，不能在item内判断
-
-        // to do 判断圆点
         if (this.item) {
           this.elements.forEach(item => item._active = false);
           [this.startX, this.startY, this.down, this.elements[index]._active] = [x - left, y - top, true, true];
         }
-        else [this.startX, this.startY, this.down] = [0, 0, false,this.elements.forEach(item => item._active = false)];
+        else[this.startX, this.startY, this.down, this.dirRect] = [0, 0, false, null, this.elements.forEach(item => item._active = false)];
         window.requestAnimationFrame(this.createElements.bind(this))
         break
       case "mousemove":
-        if (this.down && this.item) {
-
+        {
           const { startX, startY } = this
-          const screenX = e.clientX; // 鼠标事件的屏幕X坐标
-          const screenY = e.clientY; // 鼠标事件的屏幕Y坐标
-          const canvasRect = this.ins!._canvas!.getBoundingClientRect(); // 获取Canvas元素在页面上的位置
-          const canvasX = (screenX - canvasRect.left) - startX; // 相对于Canvas元素的X坐标
-          const canvasY = (screenY - canvasRect.top) - startY; // 相对于Canvas元素的Y坐标
-          //更改坐标
-          if ((canvasX)! > 0) this.elements[this.index].style!.left = canvasX
-          if ((canvasY)! > 0) this.elements[this.index].style!.top = canvasY
+          const { x, y } = this.getCanvasPoint(e)
+          // 缩放
+          if (this.dirRect && this.item) {
+            this.updateScale({ x: x - startX, y: y - startY })
 
-          this.clear(this.ins!)
-          window.requestAnimationFrame(this.createElements.bind(this))
+            window.requestAnimationFrame(this.createElements.bind(this))
+            return
+          }
+          // 拖拽
+          if (this.down && this.item) {
+            //更改坐标
+            if ((x - startX)! > 0) this.elements[this.index].style!.left = x - startX
+            if ((y - startY)! > 0) this.elements[this.index].style!.top = y - startY
+            window.requestAnimationFrame(this.createElements.bind(this))
+          }
         }
         break;
       case "mouseup":
         if (!this.item?._id) return
-        [this.item, this.index] = [undefined, -1];
-        [this.startX, this.startY, this.down] = [0, 0, false]
-
+        {
+          const {left = 0,top = 0,width= 0 ,height = 0} =this.elements[this.index].style!
+          // 如果图形被反转了，width和height肯定是负的，转正数，并且设置x和y
+          if(width < 0){
+            this.elements[this.index].style!.left= (left + width )
+            this.elements[this.index].style!.width= Math.abs(width)
+          }
+          if(height < 0) {
+            this.elements[this.index].style!.top= (top + height )
+            this.elements[this.index].style!.height= Math.abs(height)
+          }
+          window.requestAnimationFrame(this.createElements.bind(this))
+        }
+        {
+          [this.startX, this.startY, this.down, this.dirRect,] = [0, 0, false, null,]
+        }
+       
         break;
       default:
         break;
     }
   }
 
+  updateScale(point: Point) {
+    const { startX, startY } = this
+    const x = (point.x - startX);
+    const y = (point.y - startY);
+    const { left = 0, top = 0, width = 0, height = 0 } = this.elements[this.index].style!
+    const dirRect = this.dirRect!
+    switch ( dirRect) {
+      case "top:left":
+        this.elements[this.index].style!.left = x
+        this.elements[this.index].style!.width = width + (left - x)
+        this.elements[this.index].style!.top = y
+        this.elements[this.index].style!.height = height +(top - y)
+        break;
+      case "top:center":
+        break;
+      case "top:right":
+        console.log("top:right")
+        break;
+      case "center:left":
+        // 如果拖动的距离大于等于矩形右侧边界
+        // if(x >= left + width) return 
+        const newLeft =x
+        const newWidth = width + (left - x)
+        this.elements[this.index].style!.left = newLeft
+        this.elements[this.index].style!.width =newWidth
+        break;
+      case "center:right":
+        // 如果拖动的距离大于等于矩形左边侧边界
+        if(x <= left) return 
+        this.elements[this.index].style!.width = x - left
+        break;
+      case "bottom:left":
+        break;
+      case "bottom:center":
+        break;
+      case "bottom:right":
+        break;
+      default:
+        return
+    }
+  }
+  
 
   renderItem(item: PDF_Render_Element) {
     if (Reflect.ownKeys(item.style as Object).length === 0) {
@@ -123,7 +199,12 @@ export class Render extends Canvas {
     const render = this.renderMap.get(item._id)
     // 更新位移参数
     render.update(item.style!, item.props!, item._active)
-    render.draw(this.ctx,)
+    const {x,y,width,height}=render.draw(this.ctx)
+    // this.elements[this.index]!.style!.left=x
+    // this.elements[this.index]!.style!.top=y
+    // this.elements[this.index]!.style!.width=width
+    // this.elements[this.index]!.style!.height=height
+
     // this.events.addEvent(render, item.on || {}, item)
   }
 }
