@@ -79,7 +79,6 @@ export class Render extends Canvas {
           if (this.dirRect) return
         }
         let index = this.elements.findIndex(item => isPointPath(this.renderMap.get(item._id), { x, y }, this.renderMap.get(item._id).shapeType))
-        console.log(index)
         this.item = index !== -1 ? this.elements[index] : undefined
         this.index = index
         const { left = 0, top = 0 } = this.item?.style || {}

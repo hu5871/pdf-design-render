@@ -16,12 +16,14 @@ export default function isPointPath  (
       );
     }
     case ShapeType.Circle: {
-      const {x,y,width,height,radius}=ins
-     
+      const {x:cx,y:cy,width,height,radius}=ins
+      const {x,y}=point
+      const w = width / 2 
+      const h = height / 2 
       return (
-        Math.sqrt(
-          Math.pow(point.x - x, 2) + Math.pow(point.y - y, 2),
-        ) <= radius
+        (x - cx) ** 2 / w ** 2 +
+        (y - cy) ** 2 / h ** 2 <=
+        1
       );
     }
     default:
