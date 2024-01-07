@@ -18,7 +18,7 @@ export default class Text extends BaseCommon {
     this.shapeType=ShapeType.Rect
   }
 
-  draw(_ctx:CanvasRenderingContext2D):PointRect {
+  draw(_ctx:CanvasRenderingContext2D) {
     const rectPoint:PointRect={
       x:this.x,
       y:this.y,
@@ -33,12 +33,8 @@ export default class Text extends BaseCommon {
     const topRect=this.rects[0][0]
     this.x=topRect.x
     this.y=topRect.y
-    
     _ctx.font = this.font
     _ctx.textBaseline = this.textBaseline
-    const textMetrics =  _ctx.measureText(this.text)
-    // this.width = this.width || textMetrics.width
-    // this.height= this.height||textMetrics.actualBoundingBoxAscent+ textMetrics.actualBoundingBoxDescent
     let drawY = this.y 
     let drawX = this.x
     _ctx.fillStyle = this.fillStyle
@@ -47,11 +43,5 @@ export default class Text extends BaseCommon {
       drawX,
       drawY
     )
-   return {
-    x:this.x,
-    y:this.y,
-    width:this.width,
-    height:this.height
-   }
   }
 }

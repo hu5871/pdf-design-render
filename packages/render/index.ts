@@ -198,12 +198,6 @@ export class Render extends Canvas {
     const render = this.renderMap.get(item._id)
     // 更新位移参数
     render.update(item.style!, item.props!, item._active)
-    const {x,y,width,height}=render.draw(this.ctx)
-    // this.elements[this.index]!.style!.left=x
-    // this.elements[this.index]!.style!.top=y
-    // this.elements[this.index]!.style!.width=width
-    // this.elements[this.index]!.style!.height=height
-
-    // this.events.addEvent(render, item.on || {}, item)
+    render.draw(this.ctx)
   }
 }
