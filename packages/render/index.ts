@@ -65,12 +65,12 @@ export class Render extends Canvas {
         const { x, y } = this.getCanvasPoint(e)
         if (this.item) {
           //获取某个方向的圆点
-          const { rects,rectMap } = this.renderMap.get(this.item!._id)
+          const { rects, rectMap } = this.renderMap.get(this.item!._id)
           if (rects.length) {
             for (const [key, value] of rectMap) {
               // 点击命中
-              const isHit= isPointPath(key, { x, y }, ShapeType.Circle)
-              if(isHit) {
+              const isHit = isPointPath(key, { x, y }, ShapeType.Circle)
+              if (isHit) {
                 this.dirRect = value
                 break
               }
@@ -112,22 +112,22 @@ export class Render extends Canvas {
       case "mouseup":
         if (!this.item?._id) return
         {
-          const {left = 0,top = 0,width= 0 ,height = 0} =this.elements[this.index].style!
+          const { left = 0, top = 0, width = 0, height = 0 } = this.elements[this.index].style!
           // 如果图形被反转了，width和height肯定是负的，转正数，并且设置x和y
-          if(width < 0){
-            this.elements[this.index].style!.left= (left + width )
-            this.elements[this.index].style!.width= Math.abs(width)
+          if (width < 0) {
+            this.elements[this.index].style!.left = (left + width)
+            this.elements[this.index].style!.width = Math.abs(width)
           }
-          if(height < 0) {
-            this.elements[this.index].style!.top= (top + height )
-            this.elements[this.index].style!.height= Math.abs(height)
+          if (height < 0) {
+            this.elements[this.index].style!.top = (top + height)
+            this.elements[this.index].style!.height = Math.abs(height)
           }
           window.requestAnimationFrame(this.createElements.bind(this))
         }
         {
           [this.startX, this.startY, this.down, this.dirRect,] = [0, 0, false, null,]
         }
-       
+
         break;
       default:
         break;
@@ -140,42 +140,50 @@ export class Render extends Canvas {
     const y = (point.y - startY);
     const { left = 0, top = 0, width = 0, height = 0 } = this.elements[this.index].style!
     const dirRect = this.dirRect!
-    switch ( dirRect) {
+    switch (dirRect) {
       case "top:left":
         this.elements[this.index].style!.left = x
         this.elements[this.index].style!.width = width + (left - x)
         this.elements[this.index].style!.top = y
-        this.elements[this.index].style!.height = height +(top - y)
+        this.elements[this.index].style!.height = height + (top - y)
         break;
       case "top:center":
+        this.elements[this.index].style!.top = y 
+        this.elements[this.index].style!.height = height + (top - y)
         break;
       case "top:right":
-        console.log("top:right")
+        this.elements[this.index].style!.width = x - left
+        this.elements[this.index].style!.top = y 
+        this.elements[this.index].style!.height = height + (top - y)
         break;
       case "center:left":
-        // 如果拖动的距离大于等于矩形右侧边界
-        // if(x >= left + width) return 
-        const newLeft =x
-        const newWidth = width + (left - x)
-        this.elements[this.index].style!.left = newLeft
-        this.elements[this.index].style!.width =newWidth
+        {
+          const newLeft = x
+          const newWidth = width + (left - x)
+          this.elements[this.index].style!.left = newLeft
+          this.elements[this.index].style!.width = newWidth
+        }
         break;
       case "center:right":
-        // 如果拖动的距离大于等于矩形左边侧边界
-        if(x <= left) return 
         this.elements[this.index].style!.width = x - left
         break;
       case "bottom:left":
+        this.elements[this.index].style!.left = x
+        this.elements[this.index].style!.width = width + (left - x)
+        this.elements[this.index].style!.height =y-top
         break;
       case "bottom:center":
+        this.elements[this.index].style!.height = y-top
         break;
       case "bottom:right":
+        this.elements[this.index].style!.width = x - left
+        this.elements[this.index].style!.height =y-top
         break;
       default:
         return
     }
   }
-  
+
 
   renderItem(item: PDF_Render_Element) {
     if (Reflect.ownKeys(item.style as Object).length === 0) {
