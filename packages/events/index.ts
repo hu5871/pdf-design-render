@@ -4,6 +4,7 @@ export default class Events {
   ctx: CanvasRenderingContext2D
   callBack: (e: Events| MouseEvent) => void
   constructor(ctx: CanvasRenderingContext2D,callBack:(e:Events| MouseEvent)=>void) {
+    console.log("Events")
     this.ctx = ctx
     this.callBack =callBack
   }

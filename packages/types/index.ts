@@ -1,8 +1,13 @@
+import Circle from "../components/circle";
+import Text from "../components/text";
+import { ResizeDirection } from "../control/resize";
 
 export enum RenderType {
   Text = "text",
   Circle = 'circle'
 }
+
+export type Shape = Circle | Text;
 
 export type Params = {
   options: Options[]
@@ -29,6 +34,7 @@ export interface PDF_Element_Style {
   height?: number;
   left?: number
   top?: number
+  angle?: number
   right?: number
   bottom?: number
   fill?: string
@@ -51,14 +57,23 @@ export enum ShapeType {
   Polygon = 'polygon'
 }
 
-export interface Point  {
+export interface Point {
   x: number
   y: number
 }
-export type Position = "top:left" | 'top:center'|'top:right' |"center:left" | 'center:center'|'center:right'|"bottom:left" | 'bottom:center'|'bottom:right'
-export interface PointRect extends Point {
-  width:number;
-  height:number;
-  radius?:number;
-  color?:string
+export type Position = "top:left" | 'top:center' | 'top:right' | "center:left" | 'center:center' | 'center:right' | "bottom:left" | 'bottom:center' | 'bottom:right'
+export type AnglePosition = "top:left" | 'top:right' | "bottom:left" | 'bottom:right'
+export interface Rect extends Point {
+  width: number;
+  height: number;
+  radius?: number;
+  color?: string;
+  angle?: number;
+  type?: ResizeDirection
+}
+
+
+export enum CursorType {
+  Rotation = "rotation",
+  Default = "default"
 }

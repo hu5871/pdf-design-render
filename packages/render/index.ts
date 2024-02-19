@@ -1,8 +1,11 @@
 import { Canvas } from "../canvas";
-import { PDF_Render_Element, Point, PointRect, Position, ShapeType } from "../types";
+import { CursorType, PDF_Element, PDF_Render_Element, Point, Rect, Position, ShapeType, Shape } from "../types";
 import Component from "../components";
 import Events from "../events";
-import isPointPath from "../utils/isPointPath";
+import isPointPath, { transformRotate } from "../utils/isPointPath";
+import BaseCommon from "../components/common";
+import { normalizeRect } from "../utils/calc";
+import { ResizeDirection } from "../control/resize";
 
 let pdf_id = 0
 export class Render extends Canvas {
@@ -13,18 +16,21 @@ export class Render extends Canvas {
   startX: number;
   startY: number;
   down: boolean;
-  renderMap: Map<PDF_Render_Element["_id"], any>
+  renderMap: Map<PDF_Render_Element["_id"], Shape>
   item: PDF_Render_Element | undefined
   index: number
-  dirRect: Position | null;
+  dirRect: ResizeDirection | undefined;
+  isRotating: boolean;
+  rateItem: Rect | null;
+  startRect: Rect | null
 
-  constructor(canvasIns: Canvas, width: number, height: number, ratio: number) {
-    super({ width, height, element: canvasIns.element })
+  constructor(width: number, height: number, elements: PDF_Element[]) {
+    super({ width, height })
     this.renderMap = new Map()
-    this.elements = canvasIns.element.map(item => ({ ...item, _id: ++pdf_id, _active: false }));
-    this.ctx = canvasIns!._ctx;
+    this.elements = elements.map(item => ({ ...item, _id: ++pdf_id, _active: false }));
+    this.ctx = this.canvasIns!._ctx;
     this.events = new Events(this.ctx, this.handleEvent.bind(this))
-    this.ins = canvasIns
+    this.ins = this.canvasIns
 
     this.createElements()
     this.events.init(this.ins!._canvas!)
@@ -33,11 +39,17 @@ export class Render extends Canvas {
     // 按下后矩形内的坐标：x,y
     this.startX = 0
     this.startY = 0
+    this.startRect = null
     this.item = undefined
     this.index = -1
+    this.rateItem = null
 
     // 缩放
-    this.dirRect = null
+    this.dirRect = undefined
+    this.isRotating = false
+  }
+  get elementsList() {
+    return this.elements
   }
   createElements() {
     this.clear(this.ins)
@@ -63,30 +75,55 @@ export class Render extends Canvas {
     switch (type) {
       case "mousedown":
         const { x, y } = this.getCanvasPoint(e)
-        if (this.item) {
-          //获取某个方向的圆点
-          const { rects, rectMap } = this.renderMap.get(this.item!._id)
-          if (rects.length) {
-            for (const [key, value] of rectMap) {
-              // 点击命中
-              const isHit = isPointPath(key, { x, y }, ShapeType.Circle)
-              if (isHit) {
-                this.dirRect = value
-                break
-              }
-            }
+        this.down = true
+        if(this.item && this.index >= 0){
+            const { left: x = 0, top: y = 0, width = 0, height = 0, angle = 0 } = this.elements[this.index].style!
+            this.startRect = {
+              x, y, width, height, angle
+            };
+        }
+        // 如果点击控制圆点
+        if (this.item && this.down) {
+          const rect = this.renderMap.get(this.item!._id)!.controlManage.isHit({ x, y }, "size")
+          console.log(rect)
+          if (rect) {
+            this.dirRect = rect.type
+            this.setCursorStyle(CursorType.Default, 0)
           }
           if (this.dirRect) return
         }
-        let index = this.elements.findIndex(item => isPointPath(this.renderMap.get(item._id), { x, y }, this.renderMap.get(item._id).shapeType))
+
+        // 如果点击旋转区域
+        if (this.item) {
+          // 控制类实例
+          let rect = this.renderMap.get(this.item!._id)?.controlManage.isHit({ x, y }, "rotate")
+          if (rect) {
+            // 设置鼠标样式
+            this.setCursorStyle(CursorType.Rotation, rect.angle || 0)
+            // 标记控制状态
+            this.isRotating = true
+            // 开始旋转
+            const item = this.renderMap.get(this.item!._id)!
+            const {cx,cy} = item.getCenterPoint()
+            item.controlManage.rotate.startRota({ x, y },{x:cx,y:cy})
+            return
+          }
+          else this.setCursorStyle(CursorType.Default, 0)
+        }
+
+
+        // 选中图形
+        let index = this.elements.findIndex(item => {
+          return isPointPath(this.renderMap.get(item._id), { x, y }, this.renderMap.get(item._id)!.shapeType)
+        })
         this.item = index !== -1 ? this.elements[index] : undefined
         this.index = index
         const { left = 0, top = 0 } = this.item?.style || {}
         if (this.item) {
           this.elements.forEach(item => item._active = false);
-          [this.startX, this.startY, this.down, this.elements[index]._active] = [x - left, y - top, true, true];
+          [this.startX, this.startY, this.elements[index]._active] = [x - left, y - top, true];
         }
-        else[this.startX, this.startY, this.down, this.dirRect] = [0, 0, false, null, this.elements.forEach(item => item._active = false)];
+        else[this.startX, this.startY, this.down, this.dirRect] = [0, 0, false, undefined, this.elements.forEach(item => item._active = false)];
         window.requestAnimationFrame(this.createElements.bind(this))
         break
       case "mousemove":
@@ -96,10 +133,26 @@ export class Render extends Canvas {
           // 缩放
           if (this.dirRect && this.item) {
             this.updateScale({ x: x - startX, y: y - startY })
-
             window.requestAnimationFrame(this.createElements.bind(this))
             return
           }
+          if (this.isRotating && this.item && this.down) {
+            const item = this.renderMap.get(this.item!._id)!
+            const {cx,cy} = item.getCenterPoint()
+            const angle=item.controlManage.rotate.rotating({ x, y },{x:cx,y:cy},this.startRect?.angle??0)
+            this.elements[this.index].style!.angle=angle
+            window.requestAnimationFrame(this.createElements.bind(this))
+            return
+          }
+          // 移入设置旋转光标
+          if (!this.down && this.item) {
+            let rect = this.renderMap.get(this.item!._id)?.controlManage.isHit({ x, y }, "rotate")
+            if (rect) {
+              this.setCursorStyle(CursorType.Rotation, rect.angle || 0)
+            }
+            else this.setCursorStyle(CursorType.Default, 0)
+          }
+
           // 拖拽
           if (this.down && this.item) {
             //更改坐标
@@ -112,20 +165,7 @@ export class Render extends Canvas {
       case "mouseup":
         if (!this.item?._id) return
         {
-          const { left = 0, top = 0, width = 0, height = 0 } = this.elements[this.index].style!
-          // 如果图形被反转了，width和height肯定是负的，转正数，并且设置x和y
-          if (width < 0) {
-            this.elements[this.index].style!.left = (left + width)
-            this.elements[this.index].style!.width = Math.abs(width)
-          }
-          if (height < 0) {
-            this.elements[this.index].style!.top = (top + height)
-            this.elements[this.index].style!.height = Math.abs(height)
-          }
-          window.requestAnimationFrame(this.createElements.bind(this))
-        }
-        {
-          [this.startX, this.startY, this.down, this.dirRect,] = [0, 0, false, null,]
+          [this.startX, this.startY, this.down, this.dirRect, this.isRotating] = [0, 0, false, undefined, false]
         }
 
         break;
@@ -133,55 +173,22 @@ export class Render extends Canvas {
         break;
     }
   }
+  updateItemAttrs(rect:Rect){
+    const {x,y,width,height,angle}=rect
+    this.elements[this.index].style!.left = x
+    this.elements[this.index].style!.width = width
+    this.elements[this.index].style!.top = y
+    this.elements[this.index].style!.height = height
+    this.elements[this.index].style!.angle = angle
+  }
 
   updateScale(point: Point) {
-    const { startX, startY } = this
-    const x = (point.x - startX);
-    const y = (point.y - startY);
-    const { left = 0, top = 0, width = 0, height = 0 } = this.elements[this.index].style!
-    const dirRect = this.dirRect!
-    switch (dirRect) {
-      case "top:left":
-        this.elements[this.index].style!.left = x
-        this.elements[this.index].style!.width = width + (left - x)
-        this.elements[this.index].style!.top = y
-        this.elements[this.index].style!.height = height + (top - y)
-        break;
-      case "top:center":
-        this.elements[this.index].style!.top = y 
-        this.elements[this.index].style!.height = height + (top - y)
-        break;
-      case "top:right":
-        this.elements[this.index].style!.width = x - left
-        this.elements[this.index].style!.top = y 
-        this.elements[this.index].style!.height = height + (top - y)
-        break;
-      case "center:left":
-        {
-          const newLeft = x
-          const newWidth = width + (left - x)
-          this.elements[this.index].style!.left = newLeft
-          this.elements[this.index].style!.width = newWidth
-        }
-        break;
-      case "center:right":
-        this.elements[this.index].style!.width = x - left
-        break;
-      case "bottom:left":
-        this.elements[this.index].style!.left = x
-        this.elements[this.index].style!.width = width + (left - x)
-        this.elements[this.index].style!.height =y-top
-        break;
-      case "bottom:center":
-        this.elements[this.index].style!.height = y-top
-        break;
-      case "bottom:right":
-        this.elements[this.index].style!.width = x - left
-        this.elements[this.index].style!.height =y-top
-        break;
-      default:
-        return
-    }
+    if (!this.dirRect) return
+    const dirRect = this.dirRect
+    if (!this.startRect) return
+    const retRect = this.renderMap.get(this.item!._id)?.controlManage.resize.calc(this.startRect, point, dirRect)
+    if (!retRect) return
+    this.updateItemAttrs(retRect)
   }
 
 
@@ -193,7 +200,6 @@ export class Render extends Canvas {
       item.props = {}
     }
 
-
     // 如果不存在则创建
     if (!this.renderMap.has(item._id)) {
       let render = new Component[item.type](item.style!, item.props!)
@@ -203,7 +209,7 @@ export class Render extends Canvas {
     }
 
     // 复用class
-    const render = this.renderMap.get(item._id)
+    const render = this.renderMap.get(item._id)!
     // 更新位移参数
     render.update(item.style!, item.props!, item._active)
     render.draw(this.ctx)

@@ -1,8 +1,7 @@
-import { Options, PDF_Element } from "../types"
-
-
-
-
+import { CursorType, Options, PDF_Element } from "../types"
+import { normalizeDegree } from "../utils/calc"
+import getCursorSvg from "../utils/getCursorSvg"
+let canvas_id=0
 export class Canvas  {
   width: number
   height: number
@@ -11,23 +10,23 @@ export class Canvas  {
   _ctx: CanvasRenderingContext2D
   element: PDF_Element[]
   ratio: number
+  canvasIns: this
   constructor({
-    width, height, element
+    width, height
   }:{
     width: number
     height: number
-    element:PDF_Element[]
   }) {
+    this.canvasIns=this
     this.width = width
     this.height = height
-    this.element=element
     this._canvas = null
    
     if (!this._canvas) {
       this._canvas = document.createElement('canvas')
     }
     this.scale = window.devicePixelRatio
-
+    this._canvas.dataset.canvas_id=(canvas_id++)+''
     this._canvas.width = this.width * this.scale
     this._canvas.height = this.height * this.scale
 
@@ -44,9 +43,27 @@ export class Canvas  {
     return this._canvas
   }
 
+  getCanvasCenter():{cx:number,cy:number}{
+    const cx =  this._canvas!.width / 2
+    const cy =  this._canvas!.height / 2
+    return {
+      cx,
+      cy
+    }
+  }
   clear(canvas:Canvas){
     canvas._ctx.clearRect(0,0,this.width*this.scale,this.height*this.scale)
   }
+
+  setCursorStyle(type:CursorType,degree:number){
+    this._canvas!.style.cursor=getCursorSvg({
+      type,
+      degree
+    })||''
+  }
+
+
+  selectControl(){}
 
   noop(){
 

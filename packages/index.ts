@@ -1,6 +1,5 @@
 
 import { Canvas } from './canvas';
-import BaseCommon from './components/common';
 import { Render } from './render';
 import {Options, PDF_Config} from './types'
 export class VarPdf {
@@ -21,26 +20,21 @@ export class VarPdf {
     const canvasPages:(HTMLCanvasElement)[]=[]
     for (let i = 0; i < options.length; i++) {
       const {pageWidth:width,pageHeight:height,element} = options[i];
-      const canvas=new Canvas({width,height,element})
-      canvasPages.push(canvas.getCanvas() as HTMLCanvasElement )
-      this.canvas.push(canvas)
+      const render= new Render(width,height,element) 
+      this.renders.push(render)
+      canvasPages.push(render.getCanvas() as HTMLCanvasElement )
     }
     return canvasPages.filter(Boolean)
   }
   render(){
-    for (let index = 0; index < this.canvas.length; index++) {
-      const cv = this.canvas[index];
-      this.renders.push(new Render(cv,cv.width,cv.height,cv.ratio)) 
+    for (let index = 0; index < this.renders.length; index++) {
+      const cv = this.renders[index];
+      cv.createElements()
     }
+    return this.renders
   }
-  update(){
-    console.log(this.options)
-    for (let index = 0; index < this.canvas.length; index++) {
-      const rn = this.renders[index];
-      const cv = this.canvas[index];
-      cv._ctx.clearRect(0, 0, cv.width, cv.height);
-      rn.createElements()
-    }
+  clear(){
+    this.canvas=[]
+    this.renders=[]
   }
-
 }
